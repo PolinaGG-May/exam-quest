@@ -72,6 +72,8 @@
         .admin-btn:hover { background: #34495e; }
         .logout-btn { background: #7f8c8d; }
         .logout-btn:hover { background: #95a5a6; }
+        .refresh-btn { background: #16a085; font-size: 13px; margin-bottom: 10px; }
+        .refresh-btn:hover { background: #1abc9c; }
         .hidden { display: none; }
         
         .add-reward-box {
@@ -100,7 +102,9 @@
 
 <div class="container">
     <h1>❤️ Exam Quest ❤️</h1>
-    <div class="status-text" id="statusText">Синхронизация с облаком...</div>
+    <div class="status-text" id="statusText">Загрузка данных...</div>
+    <button class="refresh-btn" onclick="loadCloudData()">🔄 Обновить баланс вручную</button>
+
     <div class="score-box" id="scoreDisplay">Баланс: ... XP</div>
 
     <h2>🎁 Магазин наград:</h2>
@@ -159,16 +163,16 @@
             if (json.record && json.record.score !== undefined) {
                 gameState = json.record;
             }
-            document.getElementById('statusText').innerText = "☁️ Синхронизировано с облаком";
+            document.getElementById('statusText').innerText = "☁️ Данные актуальны";
         } catch (e) {
             console.error(e);
-            document.getElementById('statusText').innerText = "⚠️ Ошибка синхронизации";
+            document.getElementById('statusText').innerText = "⚠️ Ошибка загрузки";
         }
         renderUI();
     }
 
     async function saveCloudData() {
-        document.getElementById('statusText').innerText = "💾 Сохранение в облако...";
+        document.getElementById('statusText').innerText = "💾 Сохранение...";
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                 method: "PUT",
@@ -178,7 +182,7 @@
                 },
                 body: JSON.stringify(gameState)
             });
-            document.getElementById('statusText').innerText = "☁️ Синхронизировано с облаком";
+            document.getElementById('statusText').innerText = "☁️ Сохранено в облаке";
         } catch (e) {
             console.error(e);
             document.getElementById('statusText').innerText = "⚠️ Ошибка сохранения";
@@ -225,7 +229,7 @@
     function toggleAdmin() {
         if (isAdmin) return;
         let pass = prompt("Введи пароль админа:");
-        if (pass === "2007132007") {
+        if (pass === "1234") {
             isAdmin = true;
             document.getElementById('adminPanel').classList.remove('hidden');
             document.getElementById('toggleAdminBtn').classList.add('hidden');
@@ -286,11 +290,8 @@
         }
     }
 
-    // Загрузка при открытии
+    // Загрузка только 1 раз при открытии страницы
     loadCloudData();
-
-    // Авто-синхронизация каждые 10 секунд
-    setInterval(loadCloudData, 10000);
 </script>
 
 </body>
