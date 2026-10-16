@@ -22,7 +22,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        h1 { font-size: 24px; text-align: center; color: #2c3e50; }
+        h1 { font-size: 24px; text-align: center; color: #2c3e50; margin-bottom: 5px; }
         .score-box {
             font-size: 22px;
             font-weight: bold;
@@ -72,7 +72,7 @@
         .admin-btn:hover { background: #34495e; }
         .logout-btn { background: #7f8c8d; }
         .logout-btn:hover { background: #95a5a6; }
-        .refresh-btn { background: #16a085; font-size: 13px; margin-bottom: 10px; }
+        .refresh-btn { background: #16a085; font-size: 14px; margin-top: 15px; }
         .refresh-btn:hover { background: #1abc9c; }
         .hidden { display: none; }
         
@@ -94,7 +94,7 @@
             font-size: 12px;
             text-align: center;
             color: #7f8c8d;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -102,8 +102,7 @@
 
 <div class="container">
     <h1>❤️ Exam Quest ❤️</h1>
-    <div class="status-text" id="statusText">Загрузка данных...</div>
-    <button class="refresh-btn" onclick="loadCloudData()">🔄 Обновить баланс вручную</button>
+    <div class="status-text" id="statusText">Данные актуальны</div>
 
     <div class="score-box" id="scoreDisplay">Баланс: ... XP</div>
 
@@ -111,6 +110,9 @@
     <ul id="rewardsList"></ul>
 
     <button onclick="buyReward()">Купить выбранный купон</button>
+
+    <!-- Кнопка обновления баланса перенесена сюда -->
+    <button class="refresh-btn" onclick="loadCloudData()">🔄 Обновить баланс вручную</button>
 
     <div class="admin-section">
         <button id="toggleAdminBtn" class="admin-btn" onclick="toggleAdmin()">⚙️ Режим админа</button>
@@ -182,7 +184,7 @@
                 },
                 body: JSON.stringify(gameState)
             });
-            document.getElementById('statusText').innerText = "☁️ Сохранено в облаке";
+            document.getElementById('statusText').innerText = "☁️ Сохранено в облако";
         } catch (e) {
             console.error(e);
             document.getElementById('statusText').innerText = "⚠️ Ошибка сохранения";
@@ -229,7 +231,7 @@
     function toggleAdmin() {
         if (isAdmin) return;
         let pass = prompt("Введи пароль админа:");
-        if (pass === "1234") {
+        if (pass === "2007132007") {
             isAdmin = true;
             document.getElementById('adminPanel').classList.remove('hidden');
             document.getElementById('toggleAdminBtn').classList.add('hidden');
@@ -290,7 +292,7 @@
         }
     }
 
-    // Загрузка только 1 раз при открытии страницы
+    // Загрузка при открытии
     loadCloudData();
 </script>
 
