@@ -68,15 +68,32 @@
             border-top: 2px dashed #ddd;
             padding-top: 15px;
         }
-        .admin-btn { background: #2c3e50; font-size: 14px; padding: 8px; margin-top: 5px; }
+        .admin-btn { background: #2c3e50; font-size: 14px; padding: 10px; margin-top: 5px; }
         .admin-btn:hover { background: #34495e; }
+        .logout-btn { background: #7f8c8d; }
+        .logout-btn:hover { background: #95a5a6; }
         .hidden { display: none; }
+        
+        .add-reward-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .add-reward-box input {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎮 Exam Quest</h1>
+    <h1>❤️ Exam Quest ❤️</h1>
     <div class="score-box" id="scoreDisplay">Баланс: 0 XP</div>
 
     <h2>🎁 Магазин наград:</h2>
@@ -85,35 +102,50 @@
     <button onclick="buyReward()">Купить выбранный купон</button>
 
     <div class="admin-section">
-        <button class="admin-btn" onclick="toggleAdmin()">⚙️ Режим админа</button>
+        <button id="toggleAdminBtn" class="admin-btn" onclick="toggleAdmin()">⚙️ Режим админа</button>
+        
         <div id="adminPanel" class="hidden" style="margin-top: 10px;">
             <button class="admin-btn" style="background: #2980b9;" onclick="addXP(100)">+100 XP (Вебинар)</button>
             <button class="admin-btn" style="background: #2980b9;" onclick="addXP(150)">+150 XP (ДЗ)</button>
             <button class="admin-btn" style="background: #c0392b;" onclick="addXP(-300)">-300 XP (Штраф)</button>
+            <button class="admin-btn" style="background: #8e44ad;" onclick="addCustomXP()">✏️ Свое количество XP</button>
+
+            <!-- Форма добавления нового купона -->
+            <div class="add-reward-box">
+                <h3 style="margin-top:0; font-size:14px;">➕ Добавить новый купон:</h3>
+                <input type="text" id="newTitle" placeholder="Название купона (например, Поход в кино)">
+                <input type="number" id="newCost" placeholder="Стоимость в XP (например, 500)">
+                <button class="admin-btn" style="background: #27ae60; margin-top:0;" onclick="addNewReward()">Сохранить купон</button>
+            </div>
+
+            <button class="admin-btn logout-btn" onclick="logoutAdmin()">🔒 Выйти из режима админа</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Список наград (можешь менять их прямо здесь, когда захочешь!)
-    let rewards = [
+    const defaultRewards = [
         { title: "Массаж 15 минут", cost: 300 },
         { title: "Выбор фильма на вечер", cost: 400 },
         { title: "Пицца / Вкусняшка", cost: 800 }
     ];
 
+    let rewards = localStorage.getItem('exam_rewards') ? JSON.parse(localStorage.getItem('exam_rewards')) : defaultRewards;
     let score = localStorage.getItem('exam_score') ? parseInt(localStorage.getItem('exam_score')) : 0;
     let selectedIndex = null;
+    let isAdmin = false;
 
     function updateUI() {
         document.getElementById('scoreDisplay').innerText = `Баланс: ${score} XP`;
         localStorage.setItem('exam_score', score);
+        localStorage.setItem('exam_rewards', JSON.stringify(rewards));
 
         let listHTML = '';
         rewards.forEach((r, index) => {
             let selectedClass = selectedIndex === index ? 'selected' : '';
+            let deleteBtn = isAdmin ? `<span onclick="deleteReward(event, ${index})" style="color:red; margin-left:10px; font-weight:bold; cursor:pointer;" title="Удалить">❌</span>` : '';
             listHTML += `<li class="${selectedClass}" onclick="selectReward(${index})">
-                <span>${r.title}</span>
+                <span>${r.title} ${deleteBtn}</span>
                 <b>${r.cost} XP</b>
             </li>`;
         });
@@ -137,25 +169,72 @@
             selectedIndex = null;
             updateUI();
         } else {
-            alert("Не хватает баллов! Нужно еще подналечь на учебу 📚");
+            alert("Не хватает баллов! Нужно еще поучиться 📚");
         }
     }
 
     function toggleAdmin() {
+        if (isAdmin) return;
         let pass = prompt("Введи пароль админа:");
-        if (pass === "2007132007") { // Пароль можно изменить тут
-            let panel = document.getElementById('adminPanel');
-            panel.classList.toggle('hidden');
+        if (pass === "2007132007") { // Пароль
+            isAdmin = true;
+            document.getElementById('adminPanel').classList.remove('hidden');
+            document.getElementById('toggleAdminBtn').classList.add('hidden');
+            updateUI();
         } else if (pass !== null) {
             alert("Неверный пароль!");
         }
     }
 
+    function logoutAdmin() {
+        isAdmin = false;
+        document.getElementById('adminPanel').classList.add('hidden');
+        document.getElementById('toggleAdminBtn').classList.remove('hidden');
+        updateUI();
+    }
+
     function addXP(amount) {
         score += amount;
         if (score < 0) score = 0;
-        alert(amount > 0 ? `Зачислено +${amount} XP!` : `Списано ${amount} XP!`);
+        alert(amount >= 0 ? `Зачислено +${amount} XP!` : `Списано ${Math.abs(amount)} XP!`);
         updateUI();
+    }
+
+    function addCustomXP() {
+        let input = prompt("Введи число баллов (например: 200 для добавления или -100 для списания):");
+        if (input !== null) {
+            let val = parseInt(input);
+            if (!isNaN(val)) {
+                addXP(val);
+            } else {
+                alert("Пожалуйста, введи корректное число.");
+            }
+        }
+    }
+
+    function addNewReward() {
+        let titleInput = document.getElementById('newTitle').value.trim();
+        let costInput = parseInt(document.getElementById('newCost').value);
+
+        if (!titleInput || isNaN(costInput) || costInput <= 0) {
+            alert("Пожалуйста, введи название и корректную стоимость купона!");
+            return;
+        }
+
+        rewards.push({ title: titleInput, cost: costInput });
+        document.getElementById('newTitle').value = '';
+        document.getElementById('newCost').value = '';
+        alert(`Купон «${titleInput}» успешно добавлен!`);
+        updateUI();
+    }
+
+    function deleteReward(event, index) {
+        event.stopPropagation(); // Чтобы не срабатывал выбор карточки
+        if (confirm(`Удалить купон «${rewards[index].title}»?`)) {
+            rewards.splice(index, 1);
+            if (selectedIndex === index) selectedIndex = null;
+            updateUI();
+        }
     }
 
     updateUI();
