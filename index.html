@@ -88,13 +88,20 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+        .status-text {
+            font-size: 12px;
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>❤️ Exam Quest ❤️</h1>
-    <div class="score-box" id="scoreDisplay">Баланс: 0 XP</div>
+    <div class="status-text" id="statusText">Синхронизация с облаком...</div>
+    <div class="score-box" id="scoreDisplay">Баланс: ... XP</div>
 
     <h2>🎁 Магазин наград:</h2>
     <ul id="rewardsList"></ul>
@@ -113,8 +120,8 @@
             <!-- Форма добавления нового купона -->
             <div class="add-reward-box">
                 <h3 style="margin-top:0; font-size:14px;">➕ Добавить новый купон:</h3>
-                <input type="text" id="newTitle" placeholder="Название купона (например, Поход в кино)">
-                <input type="number" id="newCost" placeholder="Стоимость в XP (например, 500)">
+                <input type="text" id="newTitle" placeholder="Название купона">
+                <input type="number" id="newCost" placeholder="Стоимость в XP">
                 <button class="admin-btn" style="background: #27ae60; margin-top:0;" onclick="addNewReward()">Сохранить купон</button>
             </div>
 
@@ -124,24 +131,66 @@
 </div>
 
 <script>
+    // 🔑 ВСТАВЬ СВОЙ МАСТЕР-КЛЮЧ В КАВЫЧКИ ВМЕСТО ТЕКСТА НИЖЕ:
+    const BIN_ID = "6ad25a65ac6210605a37eb9d";
+    const API_KEY = "$2a$10$efoWln3zx2rm2bK7xiqIAu8Q1moziuHQiX05mu77LIU1KdHm3.8iu";
+
     const defaultRewards = [
         { title: "Массаж 15 минут", cost: 300 },
         { title: "Выбор фильма на вечер", cost: 400 },
         { title: "Пицца / Вкусняшка", cost: 800 }
     ];
 
-    let rewards = localStorage.getItem('exam_rewards') ? JSON.parse(localStorage.getItem('exam_rewards')) : defaultRewards;
-    let score = localStorage.getItem('exam_score') ? parseInt(localStorage.getItem('exam_score')) : 0;
+    let gameState = {
+        score: 0,
+        rewards: defaultRewards
+    };
+
     let selectedIndex = null;
     let isAdmin = false;
 
-    function updateUI() {
-        document.getElementById('scoreDisplay').innerText = `Баланс: ${score} XP`;
-        localStorage.setItem('exam_score', score);
-        localStorage.setItem('exam_rewards', JSON.stringify(rewards));
+    async function loadCloudData() {
+        document.getElementById('statusText').innerText = "🔄 Обновление данных...";
+        try {
+            let res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                headers: { "X-Master-Key": API_KEY }
+            });
+            let json = await res.json();
+            if (json.record && json.record.score !== undefined) {
+                gameState = json.record;
+            }
+            document.getElementById('statusText').innerText = "☁️ Синхронизировано с облаком";
+        } catch (e) {
+            console.error(e);
+            document.getElementById('statusText').innerText = "⚠️ Ошибка синхронизации";
+        }
+        renderUI();
+    }
+
+    async function saveCloudData() {
+        document.getElementById('statusText').innerText = "💾 Сохранение в облако...";
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": API_KEY
+                },
+                body: JSON.stringify(gameState)
+            });
+            document.getElementById('statusText').innerText = "☁️ Синхронизировано с облаком";
+        } catch (e) {
+            console.error(e);
+            document.getElementById('statusText').innerText = "⚠️ Ошибка сохранения";
+        }
+        renderUI();
+    }
+
+    function renderUI() {
+        document.getElementById('scoreDisplay').innerText = `Баланс: ${gameState.score} XP`;
 
         let listHTML = '';
-        rewards.forEach((r, index) => {
+        gameState.rewards.forEach((r, index) => {
             let selectedClass = selectedIndex === index ? 'selected' : '';
             let deleteBtn = isAdmin ? `<span onclick="deleteReward(event, ${index})" style="color:red; margin-left:10px; font-weight:bold; cursor:pointer;" title="Удалить">❌</span>` : '';
             listHTML += `<li class="${selectedClass}" onclick="selectReward(${index})">
@@ -154,20 +203,20 @@
 
     function selectReward(index) {
         selectedIndex = index;
-        updateUI();
+        renderUI();
     }
 
-    function buyReward() {
+    async function buyReward() {
         if (selectedIndex === null) {
             alert("Сначала выбери купон из списка!");
             return;
         }
-        let reward = rewards[selectedIndex];
-        if (score >= reward.cost) {
-            score -= reward.cost;
+        let reward = gameState.rewards[selectedIndex];
+        if (gameState.score >= reward.cost) {
+            gameState.score -= reward.cost;
             alert(`Поздравляю! Ты купил: «${reward.title}». Покажи этот экран ей! ❤️`);
             selectedIndex = null;
-            updateUI();
+            await saveCloudData();
         } else {
             alert("Не хватает баллов! Нужно еще поучиться 📚");
         }
@@ -176,11 +225,11 @@
     function toggleAdmin() {
         if (isAdmin) return;
         let pass = prompt("Введи пароль админа:");
-        if (pass === "2007132007") { // Пароль
+        if (pass === "1234") {
             isAdmin = true;
             document.getElementById('adminPanel').classList.remove('hidden');
             document.getElementById('toggleAdminBtn').classList.add('hidden');
-            updateUI();
+            renderUI();
         } else if (pass !== null) {
             alert("Неверный пароль!");
         }
@@ -190,54 +239,58 @@
         isAdmin = false;
         document.getElementById('adminPanel').classList.add('hidden');
         document.getElementById('toggleAdminBtn').classList.remove('hidden');
-        updateUI();
+        renderUI();
     }
 
-    function addXP(amount) {
-        score += amount;
-        if (score < 0) score = 0;
+    async function addXP(amount) {
+        gameState.score += amount;
+        if (gameState.score < 0) gameState.score = 0;
         alert(amount >= 0 ? `Зачислено +${amount} XP!` : `Списано ${Math.abs(amount)} XP!`);
-        updateUI();
+        await saveCloudData();
     }
 
-    function addCustomXP() {
-        let input = prompt("Введи число баллов (например: 200 для добавления или -100 для списания):");
+    async function addCustomXP() {
+        let input = prompt("Введи число баллов:");
         if (input !== null) {
             let val = parseInt(input);
             if (!isNaN(val)) {
-                addXP(val);
+                await addXP(val);
             } else {
                 alert("Пожалуйста, введи корректное число.");
             }
         }
     }
 
-    function addNewReward() {
+    async function addNewReward() {
         let titleInput = document.getElementById('newTitle').value.trim();
         let costInput = parseInt(document.getElementById('newCost').value);
 
         if (!titleInput || isNaN(costInput) || costInput <= 0) {
-            alert("Пожалуйста, введи название и корректную стоимость купона!");
+            alert("Введи название и стоимость купона!");
             return;
         }
 
-        rewards.push({ title: titleInput, cost: costInput });
+        gameState.rewards.push({ title: titleInput, cost: costInput });
         document.getElementById('newTitle').value = '';
         document.getElementById('newCost').value = '';
-        alert(`Купон «${titleInput}» успешно добавлен!`);
-        updateUI();
+        alert(`Купон «${titleInput}» добавлен!`);
+        await saveCloudData();
     }
 
-    function deleteReward(event, index) {
-        event.stopPropagation(); // Чтобы не срабатывал выбор карточки
-        if (confirm(`Удалить купон «${rewards[index].title}»?`)) {
-            rewards.splice(index, 1);
+    async function deleteReward(event, index) {
+        event.stopPropagation();
+        if (confirm(`Удалить купон «${gameState.rewards[index].title}»?`)) {
+            gameState.rewards.splice(index, 1);
             if (selectedIndex === index) selectedIndex = null;
-            updateUI();
+            await saveCloudData();
         }
     }
 
-    updateUI();
+    // Загрузка при открытии
+    loadCloudData();
+
+    // Авто-синхронизация каждые 10 секунд
+    setInterval(loadCloudData, 10000);
 </script>
 
 </body>
