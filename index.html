@@ -111,9 +111,6 @@
 
     <button onclick="buyReward()">Купить выбранный купон</button>
 
-    <!-- Кнопка обновления баланса перенесена сюда -->
-    <button class="refresh-btn" onclick="loadCloudData()">🔄 Обновить баланс вручную</button>
-
     <div class="admin-section">
         <button id="toggleAdminBtn" class="admin-btn" onclick="toggleAdmin()">⚙️ Режим админа</button>
         
@@ -134,12 +131,15 @@
             <button class="admin-btn logout-btn" onclick="logoutAdmin()">🔒 Выйти из режима админа</button>
         </div>
     </div>
+
+    <!-- Кнопка обновления перенесена в самый низ -->
+    <button class="refresh-btn" onclick="loadCloudData()">🔄 Обновить баланс вручную</button>
 </div>
 
 <script>
     // 🔑 ВСТАВЬ СВОЙ МАСТЕР-КЛЮЧ В КАВЫЧКИ ВМЕСТО ТЕКСТА НИЖЕ:
     const BIN_ID = "6ad25a65ac6210605a37eb9d";
-    const API_KEY = "$2a$10$efoWln3zx2rm2bK7xiqIAu8Q1moziuHQiX05mu77LIU1KdHm3.8iu";
+    const API_KEY = "ВСТАВЬ_СЮДА_МАСТЕР_КЛЮЧ";
 
     const defaultRewards = [
         { title: "Массаж 15 минут", cost: 300 },
